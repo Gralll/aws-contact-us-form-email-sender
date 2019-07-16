@@ -1,0 +1,125 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: API for ContactUs form email sender
+Outputs:
+  ContactUsEmailServiceApiUrl:
+    Description: URL of API endpoint
+    Value:
+      Fn::Join:
+      - ''
+      - - Ref: ContactUsEmailServiceApi
+        - .execute-api.
+        - Ref: AWS::Region
+        - .amazonaws.com
+  RestApiId:
+    Description: Rest API ID
+    Value:
+      Ref: ContactUsEmailServiceApi
+Parameters:
+  RecipientEmail:
+    Default: aleksandrgruzdev11@gmail.com
+    Description: Recipient email
+    Type: String
+  Region:
+    Default: eu-west-1
+    Description: AWS region
+    Type: String
+  SenderEmail:
+    Default: aleksandrgruzdev11@gmail.com
+    Description: Sender email
+    Type: String
+Resources:
+  ContactUsEmailServiceApi:
+    Properties:
+      DefinitionBody:
+        basePath: /dev
+        definitions:
+          Empty:
+            title: Empty Schema
+            type: object
+        info:
+          title: ContactUsEmailServiceApi
+          version: '2016-12-09T04:29:17Z'
+        paths:
+          /message:
+            options:
+              consumes:
+              - application/json
+              produces:
+              - application/json
+              responses:
+                '200':
+                  description: 200 response
+                  headers:
+                    Access-Control-Allow-Headers:
+                      type: string
+                    Access-Control-Allow-Methods:
+                      type: string
+                    Access-Control-Allow-Origin:
+                      type: string
+                  schema:
+                    $ref: '#/definitions/Empty'
+              x-amazon-apigateway-integration:
+                passthroughBehavior: when_no_match
+                requestTemplates:
+                  application/json: '{"statusCode": 200}'
+                responses:
+                  default:
+                    responseParameters:
+                      method.response.header.Access-Control-Allow-Headers: '''Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'''
+                      method.response.header.Access-Control-Allow-Methods: '''DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'''
+                      method.response.header.Access-Control-Allow-Origin: '''*'''
+                    statusCode: '200'
+                type: mock
+            post:
+              produces:
+              - application/json
+              x-amazon-apigateway-integration:
+                httpMethod: POST
+                passthroughBehavior: when_no_match
+                responses:
+                  default:
+                    statusCode: '200'
+                type: aws_proxy
+                uri:
+                  Fn::Sub: arn:aws:apigateway:${Region}:lambda:path/2015-03-31/functions/${ContactUsEmailServiceLambda.Arn}/invocations
+        schemes:
+        - https
+        swagger: '2.0'
+      EndpointConfiguration: REGIONAL
+      Name: ContactUsEmailServiceApi-dev-euw1
+      StageName: dev
+    Type: AWS::Serverless::Api
+  ContactUsEmailServiceLambda:
+    Properties:
+      CodeUri: ContactUsEmailServiceLambda
+      Environment:
+        Variables:
+          RECIPIENT_EMAIL:
+            Ref: RecipientEmail
+          REGION:
+            Ref: AWS::Region
+          SENDER_EMAIL:
+            Ref: SenderEmail
+      Events:
+        PostResource:
+          Properties:
+            Method: POST
+            Path: /message
+            RestApiId:
+              Ref: ContactUsEmailServiceApi
+          Type: Api
+      FunctionName: contact-us-email-sender
+      Handler: email-sender.lambda_handler
+      Policies:
+      - Statement:
+        - Action:
+          - ses:sendEmail
+          - ses:sendRawEmail
+          Effect: Allow
+          Resource:
+            Fn::Sub: arn:aws:ses:eu-west-1:${AWS::AccountId}:identity/${RecipientEmail}
+        Version: '2012-10-17'
+      Runtime: python3.7
+      Timeout: 10
+    Type: AWS::Serverless::Function
+Transform: AWS::Serverless-2016-10-31

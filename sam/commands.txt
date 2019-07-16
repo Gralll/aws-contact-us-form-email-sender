@@ -1,0 +1,7 @@
+sam build local invoke -e event.json ContactUsEmailServiceLambda --env-vars env.json
+sam local start-api --env-vars env.json
+sam local start-lambda --env-vars env.json
+
+sam logs --name contact-us-email-sender
+sam logs --name ContactUsEmailServiceLambda --stack-name ses-email-sender-dev-euw1
+

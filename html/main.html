@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css"
+          integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.2/jquery.min.js"></script>
+    <!--<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"-->
+            <!--integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"-->
+            <!--crossorigin="anonymous"></script>-->
+    <!--<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"-->
+            <!--integrity="sha384-ApNbgh9B+Y1QKtv3Rn7W3mgPxhU9K/ScQsAP7hUibX39j7fakFPskvXusvfa0b4Q"-->
+            <!--crossorigin="anonymous"></script>-->
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"
+            integrity="sha384-JZR6Spejh4U02d8jOt6vLEHfe/JQGiRRSQQxSfFWpi1MquVdAyjUar5+76PVCmYl"
+            crossorigin="anonymous"></script>
+    <script>
+        function setDefault(e) {
+            e.preventDefault();
+            $("#url-input").val("https://ykb3k802i2.execute-api.eu-west-1.amazonaws.com/dev/message");
+            $("#name-input").val("Alex");
+            $("#email-input").val("Alex@gmail.com");
+            $("#phone-input").val("+79999999999");
+            $("#description-input").val("How much does it cost?");
+        };
+    </script>
+    <script>
+    function submitToAPI(e) {
+       e.preventDefault();		
+	   if ($("#url-input").val()=="") {
+          alert ("Please enter your service API URL");
+              return;
+       }
+       var Namere = /[A-Za-z]{1}[A-Za-z]/;
+       if (!Namere.test($("#name-input").val())) {
+                    alert ("Name can not less than 2 char");
+           return;
+       }
+       var mobilere = /[0-9]{10}/;
+       if (!mobilere.test($("#phone-input").val())) {
+           alert ("Please enter valid mobile number");
+           return;
+       }
+       if ($("#email-input").val()=="") {
+           alert ("Please enter your email id");
+           return;
+       }
+       var reeamil = /^([\w-\.]+@([\w-]+\.)+[\w-]{2,6})?$/;
+       if (!reeamil.test($("#email-input").val())) {
+           alert ("Please enter valid email address");
+           return;
+       }
+		
+       var name = $("#name-input").val();
+       var phone = $("#phone-input").val();
+       var email = $("#email-input").val();
+       var question = $("#description-input").val();
+	   var URL = $("#url-input").val();
+       var data = {
+		  subject : "Question",	
+          username : name,
+          phone : phone,
+          email : email,
+          question : question
+       };
+
+       $.ajax({
+           type: "POST",
+           url : URL,
+           dataType: "json",
+           crossDomain: "true",
+           contentType: "application/json; charset=utf-8",
+           data: JSON.stringify(data),
+
+           success: function () {
+               // clear form and show a success message
+               alert("Successfull");
+               document.getElementById("contact-form").reset();
+               location.reload();
+           },
+           error: function () {
+               // show an error message
+               alert("UnSuccessfull");
+           }
+       });
+    }
+    </script>
+    <style>
+form {
+  width: 30%;
+  margin: auto;
+  border: 2px solid black;
+  border-radius: 4px;
+  padding: 12px 20px;
+}
+#service-url {
+	width: 30%;
+	margin: auto;
+}
+
+
+    </style>
+</head>
+<body>
+
+<div id="service-url" class="form-group">
+    <h4>URL:</h4>
+    <input type="text" style="height:35px;" id="url-input" placeholder="Enter service URL…" class="form-control"
+           style="width:100%;"/><br/>
+</div>
+
+<form id="contact-form" method="post">
+    <div class="form-group">
+        <h4>Name:</h4>
+        <input type="text" style="height:35px;" id="name-input" placeholder="Enter name here…" class="form-control"
+               style="width:100%;"/><br/>
+    </div>
+    <div class="form-group">
+        <h4>Phone:</h4>
+        <input type="phone" style="height:35px;" id="phone-input" placeholder="Enter phone number" class="form-control"
+               style="width:100%;"/><br/>
+    </div>
+    <div class="form-group">
+        <h4>Email:</h4>
+        <input type="email" style="height:35px;" id="email-input" placeholder="Enter email here…" class="form-control"
+               style="width:100%;"/><br/>
+    </div>
+    <div class="form-group">
+        <h4>How can we help you?</h4>
+        <textarea id="description-input" rows="3" placeholder="Enter your message…" class="form-control"
+                  style="width:100%;"></textarea><br/>
+    </div>
+    <div class="g-recaptcha" data-sitekey="6Lc7cVMUAAAAAM1yxf64wrmO8gvi8A1oQ_ead1ys" class="form-control"
+         style="width:100%;"></div>
+    <button type="button" onClick="setDefault(event)" class="btn btn-lg" style="margin-top:20px;">Set default</button>
+    <button type="button" onClick="submitToAPI(event)" class="btn btn-lg" style="margin-top:20px;">Submit</button>
+</form>
+</body>
+</html>

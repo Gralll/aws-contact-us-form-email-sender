@@ -1,0 +1,126 @@
+---
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: API for ContactUs form email sender
+
+Parameters:
+  RecipientEmail:
+    Description: Recipient email
+    Default: aleksandrgruzdev11@gmail.com
+    Type: String
+  SenderEmail:
+    Description: Sender email
+    Default: aleksandrgruzdev11@gmail.com
+    Type: String
+  Region:
+    Description: AWS region
+    Default: eu-west-1
+    Type: String     
+    
+
+Resources:
+  ContactUsEmailServiceApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: dev
+      Name: "ContactUsEmailServiceApi-dev-euw1"
+      EndpointConfiguration: REGIONAL
+      DefinitionBody:
+          swagger: "2.0"
+          info:
+            version: "2016-12-09T04:29:17Z"
+            title: ContactUsEmailServiceApi
+          basePath: "/dev"
+          schemes:
+          - "https"
+          paths:
+            /message:
+              post:              
+                produces:
+                  - "application/json"
+                x-amazon-apigateway-integration:
+                  responses:
+                    default:
+                      statusCode: "200"
+                  uri:
+                    Fn::Sub: arn:aws:apigateway:${Region}:lambda:path/2015-03-31/functions/${ContactUsEmailServiceLambda.Arn}/invocations
+                  passthroughBehavior: "when_no_match"
+                  httpMethod: "POST"
+                  type: "aws_proxy"
+              options:
+                consumes:
+                - "application/json"
+                produces:
+                - "application/json"
+                responses:
+                  '200':
+                    description: "200 response"
+                    schema:
+                      $ref: "#/definitions/Empty"
+                    headers:
+                      Access-Control-Allow-Origin:
+                        type: "string"
+                      Access-Control-Allow-Methods:
+                        type: "string"
+                      Access-Control-Allow-Headers:
+                        type: "string"
+                x-amazon-apigateway-integration:
+                  responses:
+                    default:
+                      statusCode: "200"
+                      responseParameters:
+                        method.response.header.Access-Control-Allow-Methods: "'DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT'"
+                        method.response.header.Access-Control-Allow-Headers: "'Content-Type,Authorization,X-Amz-Date,X-Api-Key,X-Amz-Security-Token'"
+                        method.response.header.Access-Control-Allow-Origin: "'*'"
+                  requestTemplates:
+                    application/json: "{\"statusCode\": 200}"
+                  passthroughBehavior: "when_no_match"
+                  type: "mock"
+          definitions:
+            Empty:
+              type: "object"
+              title: "Empty Schema"
+
+
+  ContactUsEmailServiceLambda:
+    Type: AWS::Serverless::Function
+    Properties:
+      FunctionName: 'contact-us-email-sender'
+      CodeUri: 's3://email-sender-gralll/email-sender.zip'
+      Handler: email-sender.lambda_handler
+      Runtime: python3.7
+      Timeout: 10
+      Events:
+        PostResource:
+          Type: Api
+          Properties:
+            RestApiId: !Ref ContactUsEmailServiceApi
+            Path: /message
+            Method: POST
+      Policies:
+        - Version: '2012-10-17'
+          Statement:
+            - Action:
+                - 'ses:sendEmail'
+                - 'ses:sendRawEmail'
+              Resource:
+                Fn::Sub: arn:aws:ses:eu-west-1:${AWS::AccountId}:identity/${RecipientEmail}
+              Effect: Allow
+      Environment:
+        Variables:
+          SENDER_EMAIL: !Ref SenderEmail
+          RECIPIENT_EMAIL: !Ref RecipientEmail
+          REGION: !Ref AWS::Region     
+
+Outputs:
+  RestApiId:
+    Description: Rest API ID
+    Value: !Ref ContactUsEmailServiceApi
+  ContactUsEmailServiceApiUrl:
+    Description: URL of API endpoint
+    Value: !Join
+      - ''
+      - - !Ref ContactUsEmailServiceApi
+        - '.execute-api.'
+        - !Ref 'AWS::Region'
+        - '.amazonaws.com'
